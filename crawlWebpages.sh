@@ -7,7 +7,8 @@ do
     # reading each line
     echo "Line No. $n : $CLEAN"
     n=$((n+1))
-    mkdir $CLEAN
+    direc="urls/"
+    direc+=$CLEAN
+    mkdir $direc
     wget -nd --spider --force-html -r -l3 $CLEAN 2>&1 | egrep -o 'https?://[^ ]+' | grep -v '\.\(css\|js\|png\|gif\|jpg\|svg\|xml\|otf\|ttf\|mp3\)$' | grep -v '\(oembed\|\?ver=\|\?v=\|eot\)' | grep '\/$' | sort | uniq > urls/$CLEAN/urls.txt
-    
 done < $filename
