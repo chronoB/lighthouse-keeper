@@ -4,6 +4,10 @@ const chromeLauncher = require("chrome-launcher")
 
 let mutex = false
 
+//TODO: Save Results
+//TODO: Don't crawl http sites. only save a note that there is one
+//TODO: Don't crawl redirecting sites.
+
 async function runLighthouse(website, folder) {
     while (mutex) {
         setTimeout(() => {
@@ -26,10 +30,22 @@ async function runLighthouse(website, folder) {
     }
     const runnerResult = await lighthouse(website, options)
 
-    // `.report` is the HTML report as a string
-    const reportHtml = runnerResult.report
-    let stripURL = website.split("/")
-    fs.writeFileSync(folder + "/" + stripURL[-1] + "lhreport.json", reportHtml)
+    const report = runnerResult.report
+    let urlSplit = website.split("/")
+    let urlID = urlSplit[urlSplit.length - 2] //last element of url is always ""
+    if (urlID.includes(".de") || urlID.includes(".com")) {
+        urlID = "main_" + urlSplit[0] //add http/https to distinguish
+        urlID = urlID.substring(0, urlID.length - 1) //remove : from string
+    }
+    let fileURI = folder + "/" + urlID + "_lhreport.json"
+    fileCounter = 1
+    while (fs.existsSync(fileURI)) {
+        fileURI = folder + "/" + urlID + "lhreport" + fileCounter + ".json"
+        console.log("File already exists. using next Counter")
+        fileCounter++
+    }
+    console.log(fileURI)
+    fs.writeFileSync(fileURI, report)
 
     // `.lhr` is the Lighthouse Result as a JS object
     console.log("Report is done for", runnerResult.lhr.finalUrl)
@@ -49,6 +65,11 @@ async function runLighthouse(website, folder) {
     //add this to summary.json
     await chrome.kill()
     mutex = false
+    saveResults(runnerResult)
+}
+
+function saveResults(runnerResult) {
+    //Do sth
 }
 
 fs.readdir("urls", (errReadDir, files) => {
