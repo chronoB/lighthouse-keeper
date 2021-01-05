@@ -3,12 +3,12 @@ const lighthouse = require("lighthouse")
 const chromeLauncher = require("chrome-launcher")
 
 let mutex = false
-let summary = {}
 // counter that is used to track the number of running/waiting lighthouse processes
 // used to track when the summary can be written
 let processCounter = 0
 
-//TODO: Save Results
+let percentFactor = 100
+
 //TODO: Don't crawl http sites. only save a note that there is one
 //TODO: Don't crawl redirecting sites.
 
@@ -36,7 +36,6 @@ async function runLighthouse(website, folder, summaryObj) {
     const runnerResult = await lighthouse(website, options)
 
     // `.lhr` is the Lighthouse Result as a JS object
-    let percentFactor = 100
     console.log("Report is done for", runnerResult.lhr.finalUrl)
     console.log(
         "Performance score was",
@@ -72,22 +71,18 @@ function saveResults(runnerResult, website, folder, summaryObj) {
         urlID = "main_" + urlSplit[0] //add http/https to distinguish
         urlID = urlID.substring(0, urlID.length - 1) //remove : from string
     }
-    let fileURI =
-        folder + "/" + getCurrentDate() + "/" + urlID + "_lhreport.json"
+    let currentDate = getCurrentDate()
+    let completeFolder = folder + "/" + currentDate + "/"
+    let file = urlID + "_lhreport.json"
+    let fileURI = completeFolder + file
     fileCounter = 1
     while (fs.existsSync(fileURI)) {
-        fileURI =
-            folder +
-            "/" +
-            getCurrentDate() +
-            "/" +
-            urlID +
-            "_lhreport" +
-            fileCounter +
-            ".json"
+        file = urlID + "_lhreport" + fileCounter + ".json"
+        fileURI = completeFolder + file
         fileCounter++
     }
-    fs.writeFileSync(fileURI, report)
+
+    writeFile(completeFolder, file, report)
 
     //generate basescores and save it to the summaryobject
     summaryObj[urlID] = {}
@@ -106,6 +101,7 @@ fs.readdir("urls", (errReadDir, directories) => {
         console.error(errReadDir)
         return
     }
+    let summary = {}
     directories.forEach((directory) => {
         fs.stat("urls/" + directory, (errStats, stats) => {
             if (errStats) {
@@ -145,7 +141,7 @@ fs.readdir("urls", (errReadDir, directories) => {
                                 })
                             }
                         })
-                        writeSummary(folder)
+                        writeSummary(folder, summary)
                     }
                 )
             }
@@ -153,19 +149,22 @@ fs.readdir("urls", (errReadDir, directories) => {
     })
 })
 
-function writeSummary(folder) {
+function writeSummary(folder, summary) {
     let timeout = 1000
     if (processCounter) {
         setTimeout(() => {
-            writeSummary(folder)
+            writeSummary(folder, summary)
         }, timeout)
         return
     }
 
-    fs.writeFileSync(
-        "urls/" + getCurrentDate() + "/summary.json",
-        JSON.stringify(summary)
-    )
+    //write specific summary for every domain
+    let keys = Object.keys(summary)
+    for (let i = 0; i < keys.length; i++) {
+        completeFolder = folder + "/" + getCurrentDate() + "/"
+        let file = "summary.json"
+        writeFile(completeFolder, file, summary[keys[i]])
+    }
 }
 
 function getCurrentDate() {
@@ -177,4 +176,12 @@ function getCurrentDate() {
     let yyyy = today.getFullYear()
 
     return yyyy + mm + dd
+}
+
+function writeFile(folder, file, data) {
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder)
+    }
+    //complete summary
+    fs.writeFileSync(folder + file, JSON.stringify(data))
 }
