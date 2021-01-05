@@ -3,7 +3,7 @@
     "parserOptions": {
         "sourceType": "module"
     },
-    "extends": ["plugin:compat/recommended", "eslint:recommended"],
+    "extends": ["eslint:recommended"],
     "env": {
         "es6": true,
         "browser": true
