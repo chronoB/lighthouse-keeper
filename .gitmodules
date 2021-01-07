@@ -1,0 +1,3 @@
+[submodule "pagelist-from-sitemap"]
+	path = pagelist-from-sitemap
+	url = https://github.com/chronoB/pagelist-from-sitemap
