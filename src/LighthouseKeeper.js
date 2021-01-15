@@ -126,7 +126,7 @@ class LighthouseKeeper {
             fs.mkdirSync(folder)
         }
         //complete summary
-        fs.writeFileSync(folder + file, JSON.stringify(data))
+        fs.writeFileSync(folder + file, data)
     }
 
     isActive() {
